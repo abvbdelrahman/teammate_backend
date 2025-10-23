@@ -52,6 +52,13 @@ const createSendToken = (user, res, message = 'Success', session ) => {
   const userData = user.toObject();
   delete userData.password;
 
+    res.cookie('jwt', token, {
+    httpOnly: true, // يمنع الوصول للكوكي من JavaScript
+    secure: process.env.NODE_ENV === 'production', // يستخدم فقط في HTTPS في الإنتاج
+    maxAge: 7 * 24 * 60 * 60 * 1000, // أسبوع
+  });
+
+
   res.status(200).json({
     success: true,
     token,
@@ -99,6 +106,7 @@ exports.register = async (req, res, next) => {
     } else if (coach.plan === 'premium') {
       await emailService.sendWelcomeEmail(`contact our sales team to set up your custom plan 'statsor1@gmail.com'`);
     }
+
 
     createSendToken(coach, res, 'Registration successful.', session.data.approvalUrl);
   } catch (error) {

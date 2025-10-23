@@ -8,11 +8,10 @@ const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const mongoose = require('mongoose');
 const MongoStore = require('connect-mongo');
-
+const cookieParser = require('cookie-parser');
+// ✅ استيراد المسارات
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
-
-// ✅ استيراد المسارات
 const authRoutes = require('./routes/authRoutes');
 const playerRoutes = require('./routes/playerRoutes');
 const trainingRoutes = require('./routes/trainingRoutes');
@@ -28,16 +27,18 @@ const noteRoutes = require('./routes/noteRoutes');
 // ✅ إعداد Passport (Google OAuth)
 require('./services/google-strategy');
 
-const app = express();
 
-// ✅ Middleware
+
+const app = express();// ✅ Middleware
+app.use(cookieParser());
+
 app.use(express.json());
 app.use(morgan('dev'));
 
 // ✅ CORS configuration
 app.use(
   cors({
-    origin: ['http://localhost:3009', 'http://127.0.0.1:3009'],
+    origin: ['https://statsor.com', 'http://127.0.0.1:3009'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
