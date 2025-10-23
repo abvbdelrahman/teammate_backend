@@ -1,0 +1,256 @@
+{
+  "info": {
+    "name": "Coach Backend API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register Coach",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth","register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Coach A\",\n  \"email\": \"coach@example.com\",\n  \"password\": \"Pass1234\",\n  \"location\": \"Cairo\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login Coach",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth","login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"coach@example.com\",\n  \"password\": \"Pass1234\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "let json = pm.response.json();",
+                  "if (json && json.token) { pm.collectionVariables.set('token', json.token); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Players",
+      "item": [
+        {
+          "name": "Create Player",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/players", "host": ["{{baseUrl}}"], "path": ["players"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Player 1\",\n  \"age\": 20,\n  \"position\": \"FW\",\n  \"fitnessLevel\": 70,\n  \"OffensiveStats\": {\n    \"goals\": 5,\n    \"assists\": 3,\n    \"shots\": 15,\n    \"shotsOnTarget\": 9,\n    \"shotAccuracy\": 60\n  },\n  \"DefensiveStats\": {\n    \"ballRecovery\": 10,\n    \"duelsWon\": 7,\n    \"foulsCommitted\": 2,\n    \"yellowCards\": 1,\n    \"redCards\": 0\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "let json = pm.response.json();",
+                  "if (json && json._id) { pm.collectionVariables.set('playerId', json._id); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Players",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": { "raw": "{{baseUrl}}/players", "host": ["{{baseUrl}}"], "path": ["players"] }
+          }
+        },
+        {
+          "name": "Get Player by Id",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": { "raw": "{{baseUrl}}/players/{{playerId}}", "host": ["{{baseUrl}}"], "path": ["players","{{playerId}}"] }
+          }
+        },
+        {
+          "name": "Update Player",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/players/{{playerId}}", "host": ["{{baseUrl}}"], "path": ["players","{{playerId}}"] },
+            "body": { "mode": "raw", "raw": "{\n  \"fitnessLevel\": 75\n}" }
+          }
+        },
+        {
+          "name": "Delete Player",
+          "request": {
+            "method": "DELETE",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": { "raw": "{{baseUrl}}/players/{{playerId}}", "host": ["{{baseUrl}}"], "path": ["players","{{playerId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Trainings",
+      "item": [
+        {
+          "name": "Create Training",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/trainings", "host": ["{{baseUrl}}"], "path": ["trainings"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"playerId\": \"{{playerId}}\",\n  \"date\": \"2025-10-10\",\n  \"exercises\": [{\n    \"name\": \"Sprint\",\n    \"reps\": 5,\n    \"sets\": 3,\n    \"duration\": 30\n  }],\n  \"notes\": \"Speed work\"\n}"
+            }
+          }
+        },
+        {
+          "name": "List Trainings for Player",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": { "raw": "{{baseUrl}}/trainings/player/{{playerId}}", "host": ["{{baseUrl}}"], "path": ["trainings","player","{{playerId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Matches",
+      "item": [
+        {
+          "name": "Create Match",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/matches", "host": ["{{baseUrl}}"], "path": ["matches"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"2025-10-10\",\n  \"opponent\": \"Team B\",\n  \"location\": \"Home\",\n  \"score\": { \"team\": 2, \"opponent\": 1 },\n  \"playerIds\": [\n    \"{{playerId}}\"\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "let json = pm.response.json();",
+                  "if (json && json._id) { pm.collectionVariables.set('matchId', json._id); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Matches",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": { "raw": "{{baseUrl}}/matches", "host": ["{{baseUrl}}"], "path": ["matches"] }
+          }
+        },
+        {
+          "name": "Get Match by Id",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": { "raw": "{{baseUrl}}/matches/{{matchId}}", "host": ["{{baseUrl}}"], "path": ["matches","{{matchId}}"] }
+          }
+        },
+        {
+          "name": "Delete Match",
+          "request": {
+            "method": "DELETE",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": { "raw": "{{baseUrl}}/matches/{{matchId}}", "host": ["{{baseUrl}}"], "path": ["matches","{{matchId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Stats",
+      "item": [
+        {
+          "name": "Overview",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": { "raw": "{{baseUrl}}/stats/overview", "host": ["{{baseUrl}}"], "path": ["stats","overview"] }
+          }
+        },
+        {
+          "name": "Top Players (goals)",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": {
+              "raw": "{{baseUrl}}/stats/players/top?metric=goals&limit=5",
+              "host": ["{{baseUrl}}"],
+              "path": ["stats","players","top"],
+              "query": [
+                { "key": "metric", "value": "goals" },
+                { "key": "limit", "value": "5" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Timeseries (30d day)",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": {
+              "raw": "{{baseUrl}}/stats/timeseries?range=30d&granularity=day",
+              "host": ["{{baseUrl}}"],
+              "path": ["stats","timeseries"],
+              "query": [
+                { "key": "range", "value": "30d" },
+                { "key": "granularity", "value": "day" }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000/api" },
+    { "key": "token", "value": "" },
+    { "key": "playerId", "value": "" },
+    { "key": "matchId", "value": "" }
+  ]
+}
