@@ -1,6 +1,6 @@
 // src/controllers/trainingController.js
 const Training = require('../models/Training');
-const Exercise = require('../models/Exercise');
+const Exercise = require('../models/exercise');
 const Player = require('../models/Player');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
@@ -26,7 +26,6 @@ exports.createTraining = catchAsync(async (req, res, next) => {
     created_by: userId,
   });
 
-  // إنشاء التمارين
   const exerciseDocs = exercises.map(ex => ({
     training: training._id,
     name: ex.name,
