@@ -20,7 +20,6 @@ exports.createTraining = catchAsync(async (req, res, next) => {
   }
 
 
-  // إنشاء التدريب
   const training = await Training.create({
     player: playerId,
     notes,
