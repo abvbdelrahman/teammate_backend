@@ -5,7 +5,6 @@ const Player = require('../models/Player');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 
-// ✅ إنشاء تدريب جديد مع تمارين
 exports.createTraining = catchAsync(async (req, res, next) => {
   const { playerId, exercises = [], notes, date } = req.body;
   const { role, id: userId } = req.user;
