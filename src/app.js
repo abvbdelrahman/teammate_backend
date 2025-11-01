@@ -43,7 +43,7 @@ app.use(
       'https://teamplaymate-frontend.vercel.app', // لو بتجرب نسخة فرونت على Vercel
       'http://localhost:5173',              // React local dev server
       'http://127.0.0.1:5173',              // React local dev alt
-      'http://127.0.0.1:3009'               // اللي انت كاتبه بالفعل
+      'http://127.0.0.1:3008'               // اللي انت كاتبه بالفعل
     ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
