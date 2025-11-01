@@ -11,7 +11,7 @@ const catchAsync = require('../utils/catchAsync');
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 const JWT_EXPIRES_IN = '7d';
 
-// 🔑 إنشاء التوكن وإرسال الاستجابة بنفس الشكل اللي الفرونت متوقعه
+// 🔑 إنشاء التوكن وإرسال الاستجابة (مطابقة للـ frontend)
 const createSendToken = (user, res, message = 'Success', session = null) => {
   const token = jwt.sign(
     { id: user._id, role: user.role, plan: user.plan },
@@ -25,10 +25,10 @@ const createSendToken = (user, res, message = 'Success', session = null) => {
   res.cookie('jwt', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    maxAge: 7 * 24 * 60 * 60 * 1000, // أسبوع
   });
 
-  return res.status(200).json({
+  res.status(200).json({
     success: true,
     data: {
       user: userData,
@@ -39,19 +39,17 @@ const createSendToken = (user, res, message = 'Success', session = null) => {
   });
 };
 
-// 📩 تسجيل مدرب جديد
+// 📩 تسجيل مستخدم جديد
 exports.register = async (req, res) => {
   try {
     const { name, email, password, passwordConfirm, location, role, plan, planEndsAt } = req.body;
 
-    if (!name || !email || !password || !passwordConfirm || !plan) {
+    if (!name || !email || !password || !passwordConfirm || !plan)
       return res.status(400).json({ success: false, message: 'Please provide all required fields' });
-    }
 
     const existingCoach = await Coach.findOne({ email });
-    if (existingCoach) {
+    if (existingCoach)
       return res.status(400).json({ success: false, message: 'Email already in use' });
-    }
 
     const coach = await Coach.create({
       name,
@@ -87,7 +85,6 @@ exports.register = async (req, res) => {
 // 🔐 تسجيل الدخول
 exports.login = catchAsync(async (req, res) => {
   const { email, password } = req.body;
-
   if (!email || !password)
     return res.status(400).json({ success: false, message: 'Please provide email and password' });
 
@@ -102,7 +99,7 @@ exports.login = catchAsync(async (req, res) => {
   return createSendToken(coach, res, 'Login successful.');
 });
 
-// ✅ التحقق من صحة التوكن
+// ✅ التحقق من التوكن
 exports.validateToken = async (req, res) => {
   try {
     const { token } = req.body;
@@ -142,7 +139,7 @@ exports.refreshToken = async (req, res) => {
   }
 };
 
-// ⚽ تحديث الرياضة المفضلة
+// ⚽ تحديث الرياضة
 exports.updateSportPreference = async (req, res) => {
   try {
     const { sport } = req.body;
@@ -160,6 +157,35 @@ exports.updateSportPreference = async (req, res) => {
 // 🚪 تسجيل الخروج
 exports.logout = async (req, res) => {
   res.json({ success: true, message: 'Logged out' });
+};
+
+// 🔗 Google OAuth
+exports.googleLogin = (req, res, next) => {
+  passport.authenticate('google', { scope: ['email', 'profile'] })(req, res, next);
+};
+
+exports.googleCallback = (req, res, next) => {
+  passport.authenticate('google', { failureRedirect: '/login', session: false }, async (err, googleUser) => {
+    try {
+      if (err || !googleUser)
+        return res.status(400).json({ message: 'Google authentication failed' });
+
+      let coach = await Coach.findOne({ email: googleUser.email });
+      if (!coach) {
+        coach = await Coach.create({
+          name: googleUser.displayName,
+          email: googleUser.email,
+          role: 'coach',
+          plan: 'free',
+        });
+      }
+
+      createSendToken(coach, res, 'Google login successful.');
+    } catch (error) {
+      console.error('Google callback error:', error);
+      res.status(500).json({ message: 'Google login failed', error: error.message });
+    }
+  })(req, res, next);
 };
 
 // 🔐 نسيت كلمة المرور
@@ -181,7 +207,7 @@ exports.forgotPassword = async (req, res) => {
   }
 };
 
-// 🔑 إعادة تعيين كلمة المرور (باستخدام code وليس param)
+// 🔑 إعادة تعيين كلمة المرور (بالكود)
 exports.resetPassword = async (req, res) => {
   try {
     const { email, code, password } = req.body;
@@ -205,5 +231,46 @@ exports.resetPassword = async (req, res) => {
   } catch (error) {
     console.error('Reset password error:', error);
     return res.status(500).json({ success: false, message: 'Failed to reset password' });
+  }
+};
+
+// 👤 تسجيل الدخول كزائر
+exports.guestLogin = async (req, res) => {
+  try {
+    const randomSuffix = Math.floor(Math.random() * 10000);
+    const randomPassword = Math.random().toString(36).slice(-8);
+    const hashedPassword = await bcrypt.hash(randomPassword, 12);
+
+    const guestUser = await Coach.create({
+      name: `Guest${randomSuffix}`,
+      email: `guest${Date.now()}@example.com`,
+      password: hashedPassword,
+      passwordConfirm: hashedPassword,
+      isGuest: true,
+      role: 'guest',
+      plan: 'free',
+    });
+
+    const token = jwt.sign(
+      { id: guestUser._id, role: 'guest', plan: 'free' },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Guest login successful',
+      data: {
+        user: guestUser,
+        session: { access_token: token },
+      },
+    });
+  } catch (err) {
+    console.error('Guest login error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Guest login failed',
+      error: err.message,
+    });
   }
 };
