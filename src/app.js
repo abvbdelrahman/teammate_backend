@@ -38,12 +38,25 @@ app.use(morgan('dev'));
 // ✅ CORS configuration
 app.use(
   cors({
-    origin: ['https://statsor.com', 'http://127.0.0.1:3009'],
+    origin: [
+      'https://statsor.com',                // 🌍 الموقع الرسمي
+      'https://teamplaymate-frontend.vercel.app', // لو بتجرب نسخة فرونت على Vercel
+      'http://localhost:5173',              // React local dev server
+      'http://127.0.0.1:5173',              // React local dev alt
+      'http://127.0.0.1:3009'               // اللي انت كاتبه بالفعل
+    ],
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Requested-With',
+      'Accept',
+      'Origin',
+    ],
   })
 );
+
 
 // ✅ Rate Limiter
 const limiter = rateLimit({
