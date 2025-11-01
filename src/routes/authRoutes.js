@@ -14,8 +14,8 @@ router.post('/guest', guestLogin);
 router.post('/register', register);
 router.post('/login', login);
 router.post('/validate-token', validateToken);
-router.post('/forget-password', forgotPassword );
-router.patch('/resetPassword/:token', resetPassword);
+router.post('/forgot-password', forgotPassword );
+router.patch('/reset-Password/', resetPassword);
 
 router.post('/logout', protect,logout);
 module.exports = router;
