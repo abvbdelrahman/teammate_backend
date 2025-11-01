@@ -61,8 +61,10 @@ const createSendToken = (user, res, message = 'Success', session ) => {
 
   res.status(200).json({
     success: true,
-    token,
+    data:{
     user: userData,
+    token,
+    }
     message,
     session,
   });
