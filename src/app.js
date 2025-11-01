@@ -9,6 +9,7 @@ const rateLimit = require('express-rate-limit');
 const mongoose = require('mongoose');
 const MongoStore = require('connect-mongo');
 const cookieParser = require('cookie-parser');
+
 // ✅ استيراد المسارات
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
@@ -27,25 +28,37 @@ const noteRoutes = require('./routes/noteRoutes');
 // ✅ إعداد Passport (Google OAuth)
 require('./services/google-strategy');
 
+const app = express();
 
-
-const app = express();// ✅ Middleware
+// ✅ Middleware
 app.use(cookieParser());
-
 app.use(express.json());
 app.use(morgan('dev'));
 
-// ✅ CORS configuration
+// ✅ CORS configuration (Dynamic)
 app.use(
   cors({
-    origin: [
-      'https://statsor.com',                // 🌍 الموقع الرسمي
-      'https://teamplaymate-frontend.vercel.app', // لو بتجرب نسخة فرونت على Vercel
-      'http://localhost:5173',              // React local dev server
-      'http://127.0.0.1:5173',              // React local dev alt
-      'http://127.0.0.1:3008',               // اللي انت كاتبه بالفعل
-      'http://127.0.0.1:3009',               // اللي انت كاتبه بالفعل
-    ],
+    origin: (origin, callback) => {
+      const allowedOrigins = [
+        'https://statsor.com',
+        'https://teamplaymate-frontend.vercel.app',
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+        'http://localhost:3008',
+        'http://127.0.0.1:3009',
+      ];
+
+      // لو الريكويست بدون origin (زي Postman أو health check)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        console.log('✅ Allowed Origin:', origin);
+        callback(null, true);
+      } else {
+        console.warn('❌ Blocked by CORS:', origin);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: [
@@ -57,8 +70,9 @@ app.use(
     ],
   })
 );
-app.options('*', cors());
 
+// ✅ Handle preflight requests (OPTIONS)
+app.options('*', cors());
 
 // ✅ Rate Limiter
 const limiter = rateLimit({
@@ -67,7 +81,6 @@ const limiter = rateLimit({
   message: 'Too many requests from this IP, please try again later!',
 });
 app.use('/api', limiter);
-
 
 // ✅ Session & Passport
 app.use(
