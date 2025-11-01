@@ -57,6 +57,7 @@ app.use(
     ],
   })
 );
+app.options('*', cors());
 
 
 // ✅ Rate Limiter
