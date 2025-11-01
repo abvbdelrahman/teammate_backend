@@ -11,38 +11,8 @@ const catchAsync = require('../utils/catchAsync');
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 const JWT_EXPIRES_IN = '7d';
 
-// ⚙️ خريطة صلاحيات الخطط
-const PLAN_PERMISSIONS = {
-  free: {
-    dashboards: 1,
-    widgets: 3,
-    maxPlayers: 5,
-    uploadLimit: 5,
-    canExportPDF: false,
-    supportLevel: '48-72h',
-  },
-  pro: {
-    dashboards: Infinity,
-    widgets: 15,
-    maxPlayers: Infinity,
-    uploadLimit: 50,
-    canExportPDF: true,
-    supportLevel: '24h',
-  },
-  custom: {
-    dashboards: Infinity,
-    widgets: Infinity,
-    maxPlayers: Infinity,
-    uploadLimit: Infinity,
-    canExportPDF: true,
-    supportLevel: '<12h',
-    whiteLabel: true,
-    betaAccess: true,
-  },
-};
-
-// 🔑 إنشاء التوكن وإرسال الاستجابة
-const createSendToken = (user, res, message = 'Success', session ) => {
+// 🔑 إنشاء التوكن وإرسال الاستجابة بنفس الشكل اللي الفرونت متوقعه
+const createSendToken = (user, res, message = 'Success', session = null) => {
   const token = jwt.sign(
     { id: user._id, role: user.role, plan: user.plan },
     JWT_SECRET,
@@ -52,35 +22,36 @@ const createSendToken = (user, res, message = 'Success', session ) => {
   const userData = user.toObject();
   delete userData.password;
 
-    res.cookie('jwt', token, {
-    httpOnly: true, // يمنع الوصول للكوكي من JavaScript
-    secure: process.env.NODE_ENV === 'production', // يستخدم فقط في HTTPS في الإنتاج
-    maxAge: 7 * 24 * 60 * 60 * 1000, // أسبوع
+  res.cookie('jwt', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
-
-  res.status(200).json({
+  return res.status(200).json({
     success: true,
-    data:{
-    user: userData,
-    token,
-    }
+    data: {
+      user: userData,
+      session: { access_token: token },
+    },
     message,
     session,
   });
 };
 
 // 📩 تسجيل مدرب جديد
-exports.register = async (req, res, next) => {
+exports.register = async (req, res) => {
   try {
     const { name, email, password, passwordConfirm, location, role, plan, planEndsAt } = req.body;
 
-    if (!name || !email || !password || !passwordConfirm || !plan)
-      return res.status(400).json({ message: 'Please provide all required fields' });
+    if (!name || !email || !password || !passwordConfirm || !plan) {
+      return res.status(400).json({ success: false, message: 'Please provide all required fields' });
+    }
 
     const existingCoach = await Coach.findOne({ email });
-    if (existingCoach)
-      return res.status(400).json({ message: 'Email already in use' });
+    if (existingCoach) {
+      return res.status(400).json({ success: false, message: 'Email already in use' });
+    }
 
     const coach = await Coach.create({
       name,
@@ -100,40 +71,36 @@ exports.register = async (req, res, next) => {
       console.warn('Email sending failed:', e.message);
     }
 
-    let session;
-    if (coach.plan === 'free') {
-      session = null;
-    } else if (coach.plan === 'pro') {
-      session = await createPaymentForUser(coach._id, coach.plan);
-    } else if (coach.plan === 'premium') {
-      await emailService.sendWelcomeEmail(`contact our sales team to set up your custom plan 'statsor1@gmail.com'`);
+    let session = null;
+    if (coach.plan === 'pro') {
+      const payment = await createPaymentForUser(coach._id, coach.plan);
+      session = { approvalUrl: payment.data.approvalUrl };
     }
 
-
-    createSendToken(coach, res, 'Registration successful.', session.data.approvalUrl);
+    return createSendToken(coach, res, 'Registration successful.', session);
   } catch (error) {
     console.error('Registration error:', error);
-    res.status(500).json({ message: 'Registration failed', error: error.message });
+    return res.status(500).json({ success: false, message: 'Registration failed', error: error.message });
   }
 };
 
-
 // 🔐 تسجيل الدخول
-exports.login = catchAsync(async (req, res, next) => {
+exports.login = catchAsync(async (req, res) => {
   const { email, password } = req.body;
+
   if (!email || !password)
-      return res.status(400).json({ message: 'Please provide email and password' });
+    return res.status(400).json({ success: false, message: 'Please provide email and password' });
 
-    const coach = await Coach.findOne({ email }).select('+password');
-    if (!coach)
-      return res.status(401).json({ message: 'Invalid email or password' });
+  const coach = await Coach.findOne({ email }).select('+password');
+  if (!coach)
+    return res.status(401).json({ success: false, message: 'Invalid email or password' });
 
-    const isMatch = await bcrypt.compare(password, coach.password);
-    if (!isMatch)
-      return res.status(401).json({ message: 'Invalid email or password' });
+  const isMatch = await bcrypt.compare(password, coach.password);
+  if (!isMatch)
+    return res.status(401).json({ success: false, message: 'Invalid email or password' });
 
-    createSendToken(coach, res, 'Login successful.');
-  });
+  return createSendToken(coach, res, 'Login successful.');
+});
 
 // ✅ التحقق من صحة التوكن
 exports.validateToken = async (req, res) => {
@@ -147,130 +114,96 @@ exports.validateToken = async (req, res) => {
     if (!coach)
       return res.status(401).json({ success: false, message: 'Invalid token' });
 
-    res.json({
-      success: true,
-      data: { user: coach },
-    });
+    return res.json({ success: true, data: { valid: true, user: coach } });
   } catch (error) {
     console.error('Validate token error:', error);
-    res.status(500).json({ success: false, message: 'Token validation failed' });
+    return res.status(500).json({ success: false, message: 'Token validation failed' });
   }
 };
 
-// 🚪 تسجيل الخروج (Stateless)
+// ♻️ تجديد التوكن
+exports.refreshToken = async (req, res) => {
+  try {
+    const { token } = req.body;
+    if (!token)
+      return res.status(400).json({ success: false, message: 'Token is required' });
+
+    const decoded = jwt.verify(token, JWT_SECRET, { ignoreExpiration: true });
+    const newToken = jwt.sign(
+      { id: decoded.id, role: decoded.role, plan: decoded.plan },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRES_IN }
+    );
+
+    return res.json({ success: true, data: { token: newToken } });
+  } catch (error) {
+    console.error('Refresh token error:', error);
+    return res.status(400).json({ success: false, message: 'Invalid token' });
+  }
+};
+
+// ⚽ تحديث الرياضة المفضلة
+exports.updateSportPreference = async (req, res) => {
+  try {
+    const { sport } = req.body;
+    const coach = await Coach.findByIdAndUpdate(
+      req.user.id,
+      { sport, sportSelected: true },
+      { new: true }
+    );
+    return res.json({ success: true, data: { user: coach } });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Failed to update sport', error: error.message });
+  }
+};
+
+// 🚪 تسجيل الخروج
 exports.logout = async (req, res) => {
   res.json({ success: true, message: 'Logged out' });
 };
 
-// 🔗 Google OAuth
-exports.googleLogin = (req, res, next) => {
-  passport.authenticate('google', { scope: ['email', 'profile'] })(req, res, next);
-};
-
-exports.googleCallback = (req, res, next) => {
-  passport.authenticate('google', { failureRedirect: '/login', session: false }, async (err, googleUser) => {
-    try {
-      if (err || !googleUser)
-        return res.status(400).json({ message: 'Google authentication failed' });
-
-      let coach = await Coach.findOne({ email: googleUser.email });
-      if (!coach) {
-        coach = await Coach.create({
-          name: googleUser.displayName,
-          email: googleUser.email,
-          role: 'coach',
-          plan: 'free',
-        });
-      }
-
-      createSendToken(coach, res, 'Google login successful.');
-    } catch (error) {
-      console.error('Google callback error:', error);
-      res.status(500).json({ message: 'Google login failed', error: error.message });
-    }
-  })(req, res, next);
-};
-
 // 🔐 نسيت كلمة المرور
-exports.forgotPassword = async (req, res, next) => {
-  const user = await Coach.findOne({ email: req.body.email });
-  if (!user) return res.status(404).json({ message: 'No user with that email.' });
-
-  const resetToken = user.createPasswordResetToken();
-  await user.save({ validateBeforeSave: false });
-
+exports.forgotPassword = async (req, res) => {
   try {
-    const resetURL = `${req.protocol}://${req.get('host')}/api/auth/resetPassword/${resetToken}`;
+    const user = await Coach.findOne({ email: req.body.email });
+    if (!user) return res.status(404).json({ success: false, message: 'No user with that email.' });
+
+    const resetToken = user.createPasswordResetToken();
+    await user.save({ validateBeforeSave: false });
+
+    const resetURL = `${req.protocol}://${req.get('host')}/api/auth/reset-password/${resetToken}`;
     await new emailService(user, resetURL).sendPasswordReset();
-    res.status(200).json({ status: 'success', message: 'Token sent to email!' });
-  } catch (err) {
+
+    res.status(200).json({ success: true, message: 'Reset code sent to your email' });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ success: false, message: 'Failed to send reset email' });
+  }
+};
+
+// 🔑 إعادة تعيين كلمة المرور (باستخدام code وليس param)
+exports.resetPassword = async (req, res) => {
+  try {
+    const { email, code, password } = req.body;
+    const hashedToken = crypto.createHash('sha256').update(code).digest('hex');
+
+    const user = await Coach.findOne({
+      email,
+      passwordResetToken: hashedToken,
+      passwordResetExpires: { $gt: Date.now() },
+    });
+
+    if (!user) return res.status(400).json({ success: false, message: 'Invalid or expired reset code' });
+
+    user.password = password;
+    user.passwordConfirm = password;
     user.passwordResetToken = undefined;
     user.passwordResetExpires = undefined;
-    await user.save({ validateBeforeSave: false });
-    res.status(500).json({ message: 'Email sending failed' });
-  }
-};
+    await user.save();
 
-// 🔑 إعادة تعيين كلمة المرور
-exports.resetPassword = async (req, res, next) => {
-  const hashedToken = crypto
-    .createHash('sha256')
-    .update(req.params.token)
-    .digest('hex');
-
-  const user = await Coach.findOne({
-    passwordResetToken: hashedToken,
-    passwordResetExpires: { $gt: Date.now() },
-  });
-
-  if (!user) {
-    return res.status(400).json({ message: 'Token is invalid or has expired' });
-  }
-
-  user.password = req.body.password;
-  user.passwordConfirm = req.body.passwordConfirm;
-  user.passwordResetToken = undefined;
-  user.passwordResetExpires = undefined;
-  await user.save();
-
-  createSendToken(user, res, 'Password reset successful.');
-};
-
-// 👤 تسجيل الدخول كزائر
-exports.guestLogin = async (req, res, next) => {
-  try {
-    const randomSuffix = Math.floor(Math.random() * 10000);
-    const randomPassword = Math.random().toString(36).slice(-8);
-    const hashedPassword = await bcrypt.hash(randomPassword, 12);
-
-    const guestUser = await Coach.create({
-      name: `Guest${randomSuffix}`,
-      email: `guest${Date.now()}@example.com`,
-      password: hashedPassword,
-      passwordConfirm: hashedPassword,
-      isGuest: true,
-      role: 'guest',
-      plan: 'free',
-    });
-
-    const token = jwt.sign(
-      { id: guestUser._id, role: 'guest', plan: 'free' },
-      JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-
-    res.status(200).json({
-      status: 'success',
-      message: 'Guest login successful',
-      token,
-      user: guestUser,
-    });
-  } catch (err) {
-    console.error('Guest login error:', err);
-    res.status(500).json({
-      status: 'error',
-      message: 'Guest login failed',
-      error: err.message,
-    });
+    return createSendToken(user, res, 'Password reset successful.');
+  } catch (error) {
+    console.error('Reset password error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to reset password' });
   }
 };
