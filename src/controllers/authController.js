@@ -14,7 +14,7 @@ const JWT_EXPIRES_IN = '7d';
 /**
  * ✅ إنشاء التوكن وإرسال الاستجابة
  */
-const createSendToken = (user, res, message = 'Success', session = null) => {
+const createSendToken = (user, res, message = 'Success') => {
   const token = jwt.sign(
     { id: user._id, role: user.role, plan: user.plan },
     JWT_SECRET,
@@ -40,7 +40,6 @@ const createSendToken = (user, res, message = 'Success', session = null) => {
       user: userData,
       session: { access_token: token },
     },
-    session,
   });
 };
 
@@ -79,13 +78,13 @@ exports.register = catchAsync(async (req, res) => {
   }
 
   // لو الخطة pro نبدأ الدفع
-  let session = null;
-  if (coach.plan === 'pro') {
-    const payment = await createPaymentForUser(coach._id, coach.plan);
-    session = { approvalUrl: payment.data.approvalUrl };
-  }
+  // let session = null;
+  // if (coach.plan === 'pro') {
+  //   const payment = await createPaymentForUser(coach._id, coach.plan);
+  //   session = { approvalUrl: payment.data.approvalUrl };
+  // }
 
-  return createSendToken(coach, res, 'Registration successful.', session);
+  return createSendToken(coach, res, 'Registration successful.');
 });
 
 /**
