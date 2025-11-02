@@ -49,7 +49,7 @@ const createSendToken = (user, res, message = 'Success') => {
 exports.register = catchAsync(async (req, res) => {
   const { name, email, password, passwordConfirm, location, role, plan, planEndsAt } = req.body;
 
-  if (!name || !email || !password || !passwordConfirm || location) {
+  if (!name || !email || !password || !passwordConfirm || !location) {
     return res.status(400).json({ success: false, message: 'Please provide all required fields' });
   }
 
