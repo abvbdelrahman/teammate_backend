@@ -71,11 +71,11 @@ exports.register = catchAsync(async (req, res) => {
   });
 
   // إرسال رسالة ترحيب (اختياري)
-  try {
-    await new emailService({ email, name }).sendWelcomeEmail();
-  } catch (err) {
-    console.warn('Email sending failed:', err.message);
-  }
+  // try {
+  //   await new emailService({ email, name }).sendWelcomeEmail();
+  // } catch (err) {
+  //   console.warn('Email sending failed:', err.message);
+  // }
 
   // لو الخطة pro نبدأ الدفع
   // let session = null;
