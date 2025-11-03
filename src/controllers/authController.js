@@ -70,19 +70,16 @@ exports.register = catchAsync(async (req, res) => {
     planEndsAt,
   });
 
-  // إرسال رسالة ترحيب (اختياري)
-  // try {
-  //   await new emailService({ email, name }).sendWelcomeEmail();
-  // } catch (err) {
-  //   console.warn('Email sending failed:', err.message);
-  // }
+  await new emailService({ email, name }).sendWelcomeEmail();
+  لو الخطة pro نبدأ الدفع
+  let session = null;
+  if (coach.plan === 'pro') {
+    const payment = await createPaymentForUser(coach._id, coach.plan);
+    session = payment.data.approvalUrl;
+    await new emailService({ email, name }).sendWelcomeEmail(`Hello ${coach.name}, please activate your payment from here ${session}`);
+  }
+ 
 
-  // لو الخطة pro نبدأ الدفع
-  // let session = null;
-  // if (coach.plan === 'pro') {
-  //   const payment = await createPaymentForUser(coach._id, coach.plan);
-  //   session = { approvalUrl: payment.data.approvalUrl };
-  // }
 
   return createSendToken(coach, res, 'Registration successful.');
 });
