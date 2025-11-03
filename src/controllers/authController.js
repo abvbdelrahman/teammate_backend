@@ -11,9 +11,6 @@ const catchAsync = require('../utils/catchAsync');
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 const JWT_EXPIRES_IN = '7d';
 
-/**
- * ✅ إنشاء التوكن وإرسال الاستجابة
- */
 const createSendToken = (user, res, message = 'Success') => {
   const token = jwt.sign(
     { id: user._id, role: user.role, plan: user.plan },
@@ -30,7 +27,7 @@ const createSendToken = (user, res, message = 'Success') => {
     httpOnly: true,
     secure: isProd,
     sameSite: isProd ? 'none' : 'lax',
-    maxAge: 7 * 24 * 60 * 60 * 1000, // أسبوع
+    maxAge: 7 * 24 * 60 * 60 * 1000, 
   });
 
   return res.status(201).json({
@@ -43,9 +40,7 @@ const createSendToken = (user, res, message = 'Success') => {
   });
 };
 
-/**
- * 📩 تسجيل مستخدم جديد
- */
+
 exports.register = catchAsync(async (req, res) => {
   const { name, email, password, passwordConfirm, location, role, plan, planEndsAt } = req.body;
 
@@ -71,7 +66,6 @@ exports.register = catchAsync(async (req, res) => {
   });
 
   await new emailService({ email, name }).sendWelcomeEmail();
-  لو الخطة pro نبدأ الدفع
   let session = null;
   if (coach.plan === 'pro') {
     const payment = await createPaymentForUser(coach._id, coach.plan);
