@@ -8,12 +8,13 @@ class emailService {
     this.url = url;
     this.from = process.env.EMAIL_FROM || 'TeamPlayMate <no-reply@teamplaymate.com>';
   }
-console.log('🔧 Gmail Config:', {
+console.log("Gmail Config:", {
   host: process.env.GMAIL_HOST,
   port: process.env.GMAIL_PORT,
-  user: process.env.GMAIL_USERNAME ? '✅ Exists' : '❌ Missing',
-  pass: process.env.GMAIL_PASSWORD ? '✅ Exists' : '❌ Missing',
+  user: process.env.GMAIL_USERNAME ? "Exists ✅" : "Missing ❌",
+  pass: process.env.GMAIL_PASSWORD ? "Exists ✅" : "Missing ❌",
 });
+
   // ✉️ إعداد وسيلة الإرسال
   newTransport() {
     return nodemailer.createTransport({
