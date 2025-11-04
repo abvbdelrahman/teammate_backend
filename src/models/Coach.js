@@ -18,6 +18,7 @@ const coachSchema = new Schema({
       message: 'Passwords are not the same!'
     }
   },
+  googleId: { type: String }, 
   team: { type: Schema.Types.ObjectId, ref: 'Team' },
   plan: { type: String, enum: ['free', 'pro', 'premium'], default: 'free' },
   planStartsAt: Date,
