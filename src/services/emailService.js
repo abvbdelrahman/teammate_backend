@@ -6,7 +6,7 @@ class emailService {
     this.to = user.email;
     this.firstName = user.name?.split(' ')[0] || user.name;
     this.url = url;
-    this.from = process.env.EMAIL_FROM || 'TeamPlayMate <no-reply@teamplaymate.com>';
+    this.from = process.env.EMAIL_FROM || 'TeamPlayMate <onboarding@resend.dev>';
     this.resend = new Resend(process.env.RESEND_API_KEY);
   }
 
