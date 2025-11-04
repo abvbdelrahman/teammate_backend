@@ -160,28 +160,56 @@ exports.logout = catchAsync(async (req, res) => {
 exports.googleLogin = passport.authenticate('google', { scope: ['email', 'profile'] });
 
 exports.googleCallback = (req, res, next) => {
-  passport.authenticate('google', { failureRedirect: '/login', session: false }, async (err, googleUser) => {
-    try {
-      if (err || !googleUser)
-        return res.redirect(`${proccess.env.FRONTEND_URL}/login?error=Google%20login%20failed`);
+  passport.authenticate(
+    'google',
+    { failureRedirect: '/login', session: false },
+    async (err, googleUser) => {
+      try {
+        if (err || !googleUser) {
+          return res.redirect(
+            `${process.env.FRONTEND_URL}/login?error=Google%20login%20failed`
+          );
+        }
 
-      let coach = await Coach.findOne({ email: googleUser.email });
-      if (!coach) {
-        coach = await Coach.create({
-          name: googleUser.displayName,
-          email: googleUser.email,
-          role: 'coach',
-          plan: 'free',
+        let coach = await Coach.findOne({ email: googleUser.email });
+
+        if (!coach) {
+          coach = await Coach.create({
+            name: googleUser.displayName,
+            email: googleUser.email,
+            role: 'coach',
+            plan: 'free',
+          });
+        }
+
+        // ✅ بدل ما تبعت response هنا
+        const token = jwt.sign(
+          { id: coach._id },
+          process.env.JWT_SECRET,
+          { expiresIn: process.env.JWT_EXPIRES_IN }
+        );
+
+        // ✅ ابعت الكوكي
+        res.cookie('jwt', token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          maxAge: 90 * 24 * 60 * 60 * 1000,
+          sameSite: 'Lax',
         });
-      }
 
-      const token = createToken(coach); // دالة بتعمل JWT
-      res.redirect(`${FRONTEND_URL}/dashboard?token=${token}`);
-    } catch (error) {
-      console.error('Google callback error:', error);
-      res.redirect(`${FRONTEND_URL}/login?error=Google%20login%20failed`);
+        // ✅ Redirect بعد حفظ الكوكي
+        return res.redirect(
+          `${process.env.FRONTEND_URL}/dashboard?login=success`
+        );
+
+      } catch (error) {
+        console.error('Google callback error:', error);
+        return res.redirect(
+          `${process.env.FRONTEND_URL}/login?error=Google%20login%20failed`
+        );
+      }
     }
-  })(req, res, next);
+  )(req, res, next);
 };
 
 
