@@ -234,6 +234,25 @@ exports.resetPassword = catchAsync(async (req, res) => {
   return createSendToken(user, res, 'Password reset successful.');
 });
 
+exports.verifyResetCode = catchAsync(async (req, res) => {
+  const { email, code } = req.body;
+
+  const hashedCode = crypto.createHash('sha256').update(code).digest('hex');
+
+  const user = await Coach.findOne({
+    email,
+    passwordResetToken: hashedCode,
+    passwordResetExpires: { $gt: Date.now() },
+  });
+
+  if (!user) {
+    return res.status(400).json({ success: false, message: 'Invalid or expired reset code' });
+  }
+
+  res.status(200).json({ success: true, message: 'Reset code verified successfully' });
+});
+
+
 
 /**
  * 👤 تسجيل الدخول كزائر
