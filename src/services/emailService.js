@@ -35,11 +35,17 @@ class emailService {
     await this.send('Welcome to TeamPlayMate!', message);
   }
 
-  async sendPasswordReset() {
-    const message = `You requested a password reset. Click the link below to reset your password:
-    ${this.url}`;
-    await this.send('Your password reset token (valid for 10 minutes)', message);
-  }
+  async sendPasswordReset(resetCode) {
+  const subject = 'Your password reset code (valid for 10 minutes)';
+  const message = `
+    You requested a password reset.
+    Your reset code is: <strong>${resetCode}</strong>
+    <br/><br/>
+    Enter this code in the app to reset your password.
+  `;
+  await this.send(subject, message);
+}
+
 }
 
 module.exports = emailService;
