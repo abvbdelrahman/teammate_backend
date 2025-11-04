@@ -29,6 +29,7 @@ const noteRoutes = require('./routes/noteRoutes');
 require('./services/google-strategy');
 
 const app = express();
+app.set('trust proxy', 1);
 
 // ✅ Middleware
 app.use(cookieParser());
