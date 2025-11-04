@@ -24,6 +24,7 @@ const matchEventRoutes = require('./routes/matchEventRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const noteRoutes = require('./routes/noteRoutes');
+const subscriptionRoutes = require('./routes/subscriptionRoutes')
 
 // ✅ إعداد Passport (Google OAuth)
 require('./services/google-strategy');
@@ -115,6 +116,7 @@ app.use('/api/match-events', matchEventRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/notes', noteRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/subscriptions', subscriptionRoutes);
 
 // ✅ 404 handler
 app.all('*', (req, res, next) => {
