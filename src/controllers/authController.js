@@ -163,7 +163,7 @@ exports.googleCallback = (req, res, next) => {
   passport.authenticate('google', { failureRedirect: '/login', session: false }, async (err, googleUser) => {
     try {
       if (err || !googleUser)
-        return res.status(400).json({ message: 'Google authentication failed' });
+        return res.redirect(`${proccess.env.FRONTEND_URL}/login?error=Google%20login%20failed`);
 
       let coach = await Coach.findOne({ email: googleUser.email });
       if (!coach) {
@@ -175,13 +175,15 @@ exports.googleCallback = (req, res, next) => {
         });
       }
 
-      createSendToken(coach, res, 'Google login successful.');
+      const token = createToken(coach); // دالة بتعمل JWT
+      res.redirect(`${FRONTEND_URL}/dashboard?token=${token}`);
     } catch (error) {
       console.error('Google callback error:', error);
-      res.status(500).json({ message: 'Google login failed', error: error.message });
+      res.redirect(`${FRONTEND_URL}/login?error=Google%20login%20failed`);
     }
   })(req, res, next);
 };
+
 
 /**
  * 🔐 نسيت كلمة المرور
