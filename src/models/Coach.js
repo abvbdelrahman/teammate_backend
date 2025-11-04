@@ -6,10 +6,10 @@ const validator = require('validator');
 const coachSchema = new Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
-  password: { type: String, required: true , select: false},
+  password: { type: String, required: function() { return !this.googleId; } , select: false},
   passwordConfirm: {
     type: String,
-    required: [true, 'Please confirm your password'],
+    required:function() { return !this.googleId; },
     validate: {
       // This only works on CREATE and SAVE!!!
       validator: function(el) {
