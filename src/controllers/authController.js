@@ -164,7 +164,7 @@ exports.googleCallback = (req, res, next) => {
   async (err, googleUser) => {
     try {
       if (err || !googleUser) { 
-        return res.redirect( `${process.env.FRONTEND_URL}/login?error=Google%20login%20failed `);
+        return res.redirect( `${process.env.FRONTEND_URL}/login`);
       }
           let coach = await Coach.findOne({ email: googleUser.email });
         if (!coach) { 
@@ -183,7 +183,7 @@ exports.googleCallback = (req, res, next) => {
       return res.redirect( `${process.env.FRONTEND_URL}/dashboard?login=success `);
     } catch (error) { 
       console.error('Google callback error:', error); 
-      return res.redirect( `${process.env.FRONTEND_URL}/login?error=Google%20login%20failed` ); }
+      return res.redirect( `${process.env.FRONTEND_URL}/login` ); }
   } )(req, res, next); };
 
 
