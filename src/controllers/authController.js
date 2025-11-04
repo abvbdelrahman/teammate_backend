@@ -164,7 +164,8 @@ exports.googleCallback = (req, res, next) => {
   async (err, googleUser) => {
     try {
       if (err || !googleUser) { 
-        return res.redirect( ${process.env.FRONTEND_URL}/login?error=Google%20login%20failed ); }
+        return res.redirect( `${process.env.FRONTEND_URL}/login?error=Google%20login%20failed `);
+      }
           let coach = await Coach.findOne({ email: googleUser.email });
         if (!coach) { 
           coach = await Coach.create({
@@ -174,7 +175,16 @@ exports.googleCallback = (req, res, next) => {
             plan: 'free',
             googleId: googleUser.id, // مهم عشان validation يعدي
 
-          }); } // ✅ بدل ما تبعت response هنا const token = jwt.sign( { id: coach._id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN } ); // ✅ ابعت الكوكي res.cookie('jwt', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', maxAge: 90 * 24 * 60 * 60 * 1000, sameSite: 'Lax', }); // ✅ Redirect بعد حفظ الكوكي return res.redirect( ${process.env.FRONTEND_URL}/dashboard?login=success ); } catch (error) { console.error('Google callback error:', error); return res.redirect( ${process.env.FRONTEND_URL}/login?error=Google%20login%20failed ); } } )(req, res, next); };
+          }); } // ✅ بدل ما تبعت response هنا
+      const token = jwt.sign( { id: coach._id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN } );
+      // ✅ ابعت الكوكي 
+      res.cookie('jwt', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', maxAge: 90 * 24 * 60 * 60 * 1000, sameSite: 'Lax', });
+      // ✅ Redirect بعد حفظ الكوكي 
+      return res.redirect( `${process.env.FRONTEND_URL}/dashboard?login=success `);
+    } catch (error) { 
+      console.error('Google callback error:', error); 
+      return res.redirect( `${process.env.FRONTEND_URL}/login?error=Google%20login%20failed` ); }
+  } )(req, res, next); };
 
 
 
