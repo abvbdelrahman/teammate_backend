@@ -188,22 +188,32 @@ exports.googleCallback = (req, res, next) => {
  */
 exports.forgotPassword = catchAsync(async (req, res) => {
   const user = await Coach.findOne({ email: req.body.email });
-  if (!user) return res.status(404).json({ success: false, message: 'No user with that email.' });
+  if (!user)
+    return res.status(404).json({ success: false, message: 'No user with that email.' });
 
-  const resetToken = user.createPasswordResetToken();
+  // 1️⃣ أنشئ كود 6 أرقام
+  const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+  // 2️⃣ خزّنه بعد ما تعمله hash للأمان
+  user.passwordResetToken = crypto.createHash('sha256').update(resetCode).digest('hex');
+  user.passwordResetExpires = Date.now() + 10 * 60 * 1000; // صالح لمدة 10 دقايق
   await user.save({ validateBeforeSave: false });
 
-  const resetURL = `${req.protocol}://${req.get('host')}/api/auth/reset-password/${resetToken}`;
-  await new emailService(user, resetURL).sendPasswordReset();
+  // 3️⃣ ابعت الكود بالإيميل
+  await new emailService(user).sendPasswordReset(resetCode);
 
+  // 4️⃣ ردّ على الفرونت
   res.status(200).json({ success: true, message: 'Reset code sent to your email' });
 });
+
 
 /**
  * 🔑 إعادة تعيين كلمة المرور
  */
 exports.resetPassword = catchAsync(async (req, res) => {
   const { email, code, password } = req.body;
+
+  // حوّل الكود الـ 6 أرقام إلى hash ودوّر عليه
   const hashedToken = crypto.createHash('sha256').update(code).digest('hex');
 
   const user = await Coach.findOne({
@@ -223,6 +233,7 @@ exports.resetPassword = catchAsync(async (req, res) => {
 
   return createSendToken(user, res, 'Password reset successful.');
 });
+
 
 /**
  * 👤 تسجيل الدخول كزائر
