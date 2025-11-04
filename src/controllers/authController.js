@@ -160,65 +160,21 @@ exports.logout = catchAsync(async (req, res) => {
 exports.googleLogin = passport.authenticate('google', { scope: ['email', 'profile'] });
 
 exports.googleCallback = (req, res, next) => {
-  passport.authenticate(
-    'google',
-    { session: false },
-    async (err, googleUser) => {
-      try {
-        if (err || !googleUser) {
-          // بدل redirect، نرجع JSON فيه خطأ
-          return res.status(401).json({ 
-            success: false, 
-            message: 'Google login failed', 
-            error: err?.message || 'No user returned from Google' 
-          });
-        }
-
-        let coach = await Coach.findOne({ email: googleUser.email });
-
-        if (!coach) {
+  passport.authenticate( 'google', { failureRedirect: '/login', session: false },
+  async (err, googleUser) => {
+    try {
+      if (err || !googleUser) { 
+        return res.redirect( ${process.env.FRONTEND_URL}/login?error=Google%20login%20failed ); }
+          let coach = await Coach.findOne({ email: googleUser.email });
+        if (!coach) { 
           coach = await Coach.create({
             name: googleUser.displayName,
-            email: googleUser.email,
+            email: googleUser.email, 
             role: 'coach',
             plan: 'free',
-            googleId: googleUser.id,
-          });
-        }
+            googleId: googleUser.id, // مهم عشان validation يعدي
 
-        // إنشاء الـ JWT
-        const token = jwt.sign(
-          { id: coach._id },
-          process.env.JWT_SECRET,
-          { expiresIn: process.env.JWT_EXPIRES_IN }
-        );
-
-        // إرسال الكوكي
-        res.cookie('jwt', token, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          maxAge: 90 * 24 * 60 * 60 * 1000,
-          sameSite: 'Lax',
-        });
-
-        // إعادة JSON بدل redirect
-        return res.json({
-          success: true,
-          message: 'Login successful',
-          user: { id: coach._id, name: coach.name, email: coach.email },
-        });
-
-      } catch (error) {
-        console.error('Google callback error:', error);
-        return res.status(500).json({
-          success: false,
-          message: 'Google login failed',
-          error: error.message,
-        });
-      }
-    }
-  )(req, res, next);
-};
+          }); } // ✅ بدل ما تبعت response هنا const token = jwt.sign( { id: coach._id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN } ); // ✅ ابعت الكوكي res.cookie('jwt', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', maxAge: 90 * 24 * 60 * 60 * 1000, sameSite: 'Lax', }); // ✅ Redirect بعد حفظ الكوكي return res.redirect( ${process.env.FRONTEND_URL}/dashboard?login=success ); } catch (error) { console.error('Google callback error:', error); return res.redirect( ${process.env.FRONTEND_URL}/login?error=Google%20login%20failed ); } } )(req, res, next); };
 
 
 
