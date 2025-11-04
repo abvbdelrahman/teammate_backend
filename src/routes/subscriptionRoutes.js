@@ -11,7 +11,7 @@ const { protect, restrictTo } = require('../middlewares/authMiddleware');
 router.get('/current', protect, subscriptionController.getMySubscription);
 
 // إنشاء اشتراك جديد للمستخدم (مثلاً الخطة المجانية أو الدفع المباشر)
-router.post('/create', protect, subscriptionController.createSubscriptionForUser);
+router.post('/create', protect, subscriptionController.createUserSubscription );
 
 // ترقية الاشتراك الحالي
 router.put('/upgrade', protect, subscriptionController.upgradeSubscription);
