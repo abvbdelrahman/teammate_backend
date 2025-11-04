@@ -34,6 +34,7 @@ router.post('/refresh-token', refreshToken);
 
 // 🔐 Password reset flow
 router.post('/forgot-password', forgotPassword);
+router.post('/verify-reset-code', authController.verifyResetCode);
 router.post('/reset-password', resetPassword);
 
 // ⚽ Update user sport preference
