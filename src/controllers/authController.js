@@ -182,6 +182,7 @@ exports.googleCallback = (req, res, next) => {
             email: googleUser.email,
             role: 'coach',
             plan: 'free',
+            googleId: googleUser.id,
           });
         }
 
