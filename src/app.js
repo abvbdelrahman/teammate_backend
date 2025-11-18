@@ -38,43 +38,8 @@ app.use(express.json());
 app.use(morgan('dev'));
 
 // ✅ CORS configuration (Dynamic)
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      const allowedOrigins = [
-        'https://statsor.com',
-        'https://teamplaymate-frontend.vercel.app',
-        'http://localhost:5173',
-        'http://127.0.0.1:5173',
-        'http://localhost:3008',
-        'http://127.0.0.1:3009',
-      ];
+app.use(cors({ origin: "*"}));
 
-      // لو الريكويست بدون origin (زي Postman أو health check)
-      if (!origin) return callback(null, true);
-
-      if (allowedOrigins.includes(origin)) {
-        console.log('✅ Allowed Origin:', origin);
-        callback(null, true);
-      } else {
-        console.warn('❌ Blocked by CORS:', origin);
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: [
-      'Content-Type',
-      'Authorization',
-      'X-Requested-With',
-      'Accept',
-      'Origin',
-    ],
-  })
-);
-
-// ✅ Handle preflight requests (OPTIONS)
-app.options('*', cors());
 
 // ✅ Rate Limiter
 const limiter = rateLimit({
